@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#101a15" />
+  <title>Into the Pines — A Forest Survival Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="game-shell" class="not-started">
+    <canvas id="world" aria-label="3D forest survival game"></canvas>
+    <div class="vignette"></div>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Into the Pines home"><span class="brand-mark">✳</span><span>FIELD NOTES <b>/ 01</b></span></a>
+      <div class="day-pill"><span class="sun-icon" id="weather-icon">☀</span><span id="day-label">DAY 01 <i>·</i> MORNING</span></div>
+      <button class="icon-button" id="sound-button" aria-label="Toggle sound" title="Toggle sound">♫</button>
+    </header>
+    <section class="mission-card" id="mission-card">
+      <div class="eyebrow"><span class="live-dot"></span> YOUR FIRST NIGHT</div>
+      <h2 id="mission-title">Make a little shelter.</h2>
+      <p id="mission-copy">Gather wood and stone, then build a fire before dark.</p>
+      <div class="mission-progress"><div class="progress-track"><span id="quest-progress"></span></div><span id="quest-count">0 / 5</span></div>
+      <button id="mission-dismiss" class="dismiss" aria-label="Hide objective">×</button>
+    </section>
+    <section class="status-panel" aria-label="Survival status">
+      <div class="status-heading"><span>CONDITION</span><span id="condition-label">STEADY</span></div>
+      <div class="meter-row"><span class="meter-icon">♡</span><div class="meter-name">Health</div><div class="meter-track"><i id="health-fill" class="health"></i></div><span class="meter-value" id="health-value">100</span></div>
+      <div class="meter-row"><span class="meter-icon">◒</span><div class="meter-name">Hunger</div><div class="meter-track"><i id="food-fill" class="food"></i></div><span class="meter-value" id="food-value">82</span></div>
+      <div class="meter-row"><span class="meter-icon">◉</span><div class="meter-name">Thirst</div><div class="meter-track"><i id="water-fill" class="water"></i></div><span class="meter-value" id="water-value">76</span></div>
+      <div class="meter-row warmth-row"><span class="meter-icon">♨</span><div class="meter-name">Warmth</div><div class="meter-track"><i id="warmth-fill" class="warmth"></i></div><span class="meter-value" id="warmth-value">68</span></div>
+    </section>
+    <section class="inventory" aria-label="Inventory">
+      <div class="inventory-label">PACK <span id="pack-capacity">LIGHT</span></div>
+      <div class="inventory-slots">
+        <div class="slot"><span class="slot-icon wood-icon">⌁</span><span class="slot-count" id="wood-count">0</span><small>WOOD</small></div>
+        <div class="slot"><span class="slot-icon stone-icon">◆</span><span class="slot-count" id="stone-count">0</span><small>STONE</small></div>
+        <div class="slot"><span class="slot-icon berry-icon">●</span><span class="slot-count" id="berry-count">0</span><small>BERRIES</small></div>
+      </div>
+    </section>
+    <div class="compass" id="compass"><span>N</span><div class="compass-needle"></div></div>
+    <div class="interaction" id="interaction"><span class="interaction-key">E</span><span id="interaction-text">Gather fallen branch</span></div>
+    <div class="toast" id="toast"></div>
+    <div class="crosshair"><i></i><i></i></div>
+
+    <div class="touch-controls" id="touch-controls">
+      <div class="joystick" id="joystick"><div class="joy-ring"></div><div class="joy-knob" id="joy-knob"></div></div>
+      <div class="touch-actions"><button id="touch-use" class="touch-action" aria-label="Gather or interact"><span>＋</span><small>USE</small></button><button id="touch-eat" class="touch-action" aria-label="Eat berries"><span>●</span><small>EAT</small></button></div>
+    </div>
+    <div class="desktop-hint" id="desktop-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move <span>·</span> drag to look <span>·</span> <kbd>E</kbd> interact</div>
+
+    <div class="overlay" id="start-screen">
+      <div class="start-art"><div class="moon"></div><div class="art-tree tree-a"></div><div class="art-tree tree-b"></div><div class="art-tree tree-c"></div><div class="art-hill hill-a"></div><div class="art-hill hill-b"></div></div>
+      <div class="start-content">
+        <div class="start-kicker"><span></span> A SMALL SURVIVAL STORY</div>
+        <h1>Into the<br><em>Pines.</em></h1>
+        <p>You woke up alone in the deep woods.<br>Make it through three days, one choice at a time.</p>
+        <button id="start-button" class="primary-button">STEP INTO THE FOREST <span>↗</span></button>
+        <div class="start-foot"><span>✳</span> BEST EXPERIENCED WITH SOUND ON</div>
+      </div>
+      <div class="start-side-note">46° 12′ N &nbsp; / &nbsp; 09° 48′ E<br>WILDERNESS SECTOR 04</div>
+    </div>
+    <div class="overlay end-screen hidden" id="end-screen">
+      <div class="end-content"><div class="end-kicker" id="end-kicker">FIELD REPORT / 03</div><h2 id="end-title">The forest<br><em>remembers.</em></h2><p id="end-copy">You made it through. That's enough for today.</p><button id="restart-button" class="primary-button">WALK IT AGAIN <span>↗</span></button></div>
+    </div>
+    <div class="pause-screen hidden" id="pause-screen"><div>PAUSED</div><p>Take a breath. The woods can wait.</p><button id="resume-button">BACK TO THE WOODS ↗</button></div>
+  </main>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
