@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#183c32">
+<link rel="icon" href="data:,">
+<title>Recreate the Forest</title>
+<style>
+:root{color-scheme:dark;--cream:#f7edcf;--gold:#e5c777;--glass:rgba(17,44,37,.78)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#142f29;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;color:var(--cream)}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+.hud{position:fixed;inset:0;pointer-events:none;padding:clamp(12px,3vw,28px);display:flex;flex-direction:column;justify-content:space-between}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.brand,.counter,.hint,.sound{background:var(--glass);border:1px solid rgba(239,225,172,.2);box-shadow:0 10px 32px #071a1666;backdrop-filter:blur(12px)}
+.brand{padding:12px 17px;border-radius:17px}.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:10px;color:#c3d39a;font-weight:800}.brand h1{font-size:clamp(18px,3vw,25px);line-height:1;margin:5px 0 0;letter-spacing:-.04em}.stats{display:flex;gap:8px}.counter{border-radius:15px;padding:10px 15px;min-width:105px;text-align:center}.counter strong{font-size:18px;color:#f7dc8a}.counter span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#b9c9ad;margin-top:1px;font-weight:800}
+.bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}.hint{border-radius:14px;padding:10px 14px;font-size:12px;color:#d6ddc8;line-height:1.55}.hint b{color:#f7dc8a}.sound{pointer-events:auto;color:var(--cream);border-radius:50%;width:42px;height:42px;font-size:18px;cursor:pointer}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(8,29,25,.35),rgba(8,29,25,.67));padding:20px;transition:opacity .35s,visibility .35s}.overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}.card{width:min(440px,100%);text-align:center;padding:clamp(25px,6vw,43px);border:1px solid #e8d39b55;border-radius:28px;background:linear-gradient(145deg,rgba(31,67,53,.96),rgba(18,45,40,.97));box-shadow:0 30px 90px #071a1680}.badge{display:inline-block;color:#d4dfae;text-transform:uppercase;letter-spacing:.2em;font-size:10px;font-weight:900}.card h2{font-size:clamp(34px,8vw,52px);line-height:.98;letter-spacing:-.06em;margin:12px 0;color:#fff4d5}.card p{color:#d0d9c7;line-height:1.65;font-size:14px;margin:12px 0 24px}.play{border:0;border-radius:100px;background:#e6c876;color:#243b2e;padding:14px 28px;font:800 14px inherit;cursor:pointer;box-shadow:0 5px 0 #af9352;transition:transform .15s,filter .15s}.play:hover{filter:brightness(1.08);transform:translateY(-2px)}.play:active{transform:translateY(2px);box-shadow:0 2px 0 #af9352}.keyrow{display:flex;justify-content:center;gap:7px;margin:20px 0 0;color:#9eb39f;font-size:11px}.key{border:1px solid #82947c66;border-radius:5px;padding:3px 7px;color:#e5e6ca}
+.touch{position:fixed;bottom:22px;left:20px;right:20px;display:none;justify-content:space-between;align-items:flex-end;pointer-events:none}.pad{display:grid;grid-template:repeat(2,48px)/repeat(3,48px);gap:4px;pointer-events:auto}.pad button,.plantBtn{background:#173f35c9;color:#f5e8c1;border:1px solid #e7d28b66;border-radius:13px;font-size:18px;touch-action:none;box-shadow:0 4px 14px #06191588}.pad button:nth-child(1){grid-column:2}.pad button:nth-child(2){grid-column:1;grid-row:2}.pad button:nth-child(3){grid-column:2;grid-row:2}.pad button:nth-child(4){grid-column:3;grid-row:2}.plantBtn{pointer-events:auto;padding:14px 17px;font-size:12px;font-weight:900;letter-spacing:.08em}
+@media (pointer:coarse){.touch{display:flex}.bottom .hint{display:none}.counter{min-width:80px;padding:8px}.brand{padding:10px 12px}.hud{padding:12px}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="A forest restoration game"></canvas>
+<div class="hud">
+  <div class="topbar"><div class="brand"><div class="eyebrow">A small world to mend</div><h1>Recreate the forest</h1></div><div class="stats"><div class="counter"><strong id="seedCount">0</strong><span>seed pods</span></div><div class="counter"><strong id="treeCount">0 / 8</strong><span>saplings</span></div></div></div>
+  <div class="bottom"><div class="hint"><b>WASD / arrows</b> to wander &nbsp;·&nbsp; <b>E</b> to plant at a glowing clearing<br>Gather seed pods from the forest floor. Bring life back, one tree at a time.</div><button class="sound" id="soundBtn" aria-label="Toggle sound">♫</button></div>
+</div>
+<div class="touch" id="touchControls"><div class="pad"><button data-dir="up">↑</button><button data-dir="left">←</button><button data-dir="down">↓</button><button data-dir="right">→</button></div><button class="plantBtn" id="touchPlant">PLANT&nbsp; · &nbsp;E</button></div>
+<div class="overlay" id="intro"><div class="card"><span class="badge">A quiet little adventure</span><h2>Help the forest<br>grow again.</h2><p>The old woods have grown thin. Gather the scattered seed pods and plant new trees in the waiting clearings. Every small act brings the forest back.</p><button class="play" id="startBtn">Step into the woods</button><div class="keyrow"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span>or arrow keys to move</span></div></div></div>
+<div class="overlay hidden" id="finish"><div class="card"><span class="badge">The forest remembers</span><h2>A world<br>in bloom.</h2><p>You planted the last sapling. Listen—the woods are already welcoming their new neighbors.</p><button class="play" id="againBtn">Wander once more</button></div></div>
+<script>
+(()=>{
+const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d');
+const W=2200,H=1680,sites=[{x:350,y:330},{x:760,y:260},{x:1240,y:330},{x:1810,y:390},{x:410,y:900},{x:1010,y:830},{x:1690,y:970},{x:1210,y:1370}];
+let dpr=1,vw=0,vh=0,cam={x:0,y:0},running=false,won=false,keys={},last=0,seedCount=0,planted=0,soundOn=false,audio;
+const player={x:W/2,y:H/2,r:13,face:0};
+let trees=[],seeds=[],flowers=[],motes=[],particles=[];
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
+const rand=rng(73192);
+function resize(){dpr=Math.min(devicePixelRatio||1,2);vw=innerWidth;vh=innerHeight;canvas.width=Math.floor(vw*dpr);canvas.height=Math.floor(vh*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+function nearSite(x,y,gap=95){return sites.some(s=>Math.hypot(s.x-x,s.y-y)<gap)}
+// Build a naturally scattered wood, leaving each restoration glade open.
+for(let i=0;i<295;i++){let x=40+rand()*(W-80),y=40+rand()*(H-80);if(Math.hypot(x-W/2,y-H/2)<185||nearSite(x,y,105))continue;trees.push({x,y,r:15+rand()*12,tone:Math.floor(rand()*4),s:0.78+rand()*.65})}
+for(let i=0;i<22;i++){let x=70+rand()*(W-140),y=70+rand()*(H-140);if(Math.hypot(x-W/2,y-H/2)<130||nearSite(x,y,70))continue;seeds.push({x,y,phase:rand()*8,taken:false})}
+for(let i=0;i<430;i++)flowers.push({x:rand()*W,y:rand()*H,c:Math.floor(rand()*5),s:.5+rand()*.7});
+for(let i=0;i<80;i++)motes.push({x:rand()*W,y:rand()*H,phase:rand()*8,r:1+rand()*2});
+function audioPing(freq=620){if(!soundOn)return;try{audio??=new AudioContext();let o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.055,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.35);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.36)}catch{}}
+function setCounts(){document.querySelector('#seedCount').textContent=seedCount;document.querySelector('#treeCount').textContent=`${planted} / 8`}
+function start(){document.querySelector('#intro').classList.add('hidden');running=true;last=performance.now();audioPing(520)}
+document.querySelector('#startBtn').onclick=start;
+document.querySelector('#againBtn').onclick=()=>{location.reload()};
+function doPlant(){if(!running||won)return;let site=sites.find(s=>!s.planted&&Math.hypot(player.x-s.x,player.y-s.y)<62);if(site&&seedCount>0){site.planted=true;site.plantedAt=performance.now();seedCount--;planted++;for(let i=0;i<28;i++)particles.push({x:site.x,y:site.y,vx:(rand()-.5)*95,vy:-25-rand()*90,life:.8+rand()*.7,color:i%2?'#e7d18a':'#a8c987'});setCounts();audioPing(740);if(planted===8){won=true;setTimeout(()=>document.querySelector('#finish').classList.remove('hidden'),700)}}}
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys[k]=true;if(k==='e'||k===' ')doPlant();if(k==='enter'&&!running)start()},{passive:false});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.querySelector('#touchPlant').addEventListener('pointerdown',e=>{e.preventDefault();doPlant()});
+document.querySelectorAll('[data-dir]').forEach(b=>{let k={up:'arrowup',down:'arrowdown',left:'arrowleft',right:'arrowright'}[b.dataset.dir];b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});for(let ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys[k]=false)});
+document.querySelector('#soundBtn').onclick=()=>{soundOn=!soundOn;document.querySelector('#soundBtn').textContent=soundOn?'♫':'♪';if(soundOn)audioPing(660)};
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function drawGround(t){ctx.fillStyle='#294c3c';ctx.fillRect(0,0,W,H);
+// soft earth variation
+for(let y=0;y<H;y+=120)for(let x=0;x<W;x+=120){let n=Math.sin(x*.018+y*.012)*Math.cos(y*.02-x*.009);ctx.fillStyle=n>0?'rgba(130,147,82,.045)':'rgba(6,29,24,.055)';ctx.beginPath();ctx.ellipse(x+58,y+60,85,56,0,0,Math.PI*2);ctx.fill()}
+// glade clearings
+sites.forEach((s,i)=>{ctx.fillStyle=s.planted?'rgba(122,156,91,.16)':'rgba(184,164,101,.15)';ctx.beginPath();ctx.ellipse(s.x,s.y,91,64,Math.sin(i)*.3,0,Math.PI*2);ctx.fill();ctx.strokeStyle=s.planted?'rgba(183,218,132,.3)':'rgba(236,211,143,.28)';ctx.setLineDash([3,8]);ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(s.x,s.y,44,35,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+if(s.planted){ctx.fillStyle='#735536';ctx.beginPath();ctx.ellipse(s.x,s.y+10,9,5,0,0,Math.PI*2);ctx.fill();let grow=Math.min(1,(t-(s.plantedAt||t))*.0003+0.38);ctx.fillStyle='#8c6640';roundRect(s.x-3,s.y-17*grow,6,25*grow,3);for(let j=0;j<3;j++){ctx.fillStyle=['#7ab873','#98c97a','#6aab68'][j];ctx.beginPath();ctx.arc(s.x+(j-1)*9,s.y-15*grow-Math.abs(j-1)*3,8*grow,0,Math.PI*2);ctx.fill()}}
+else{ctx.fillStyle='rgba(239,211,139,.55)';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('✦',s.x,s.y+5)}});
+}
+function drawTree(a,t){let sway=Math.sin(t*.00065+a.x*.02)*1.5;a.s||=1;ctx.save();ctx.translate(a.x,a.y);ctx.scale(a.s,a.s);ctx.fillStyle='rgba(8,24,20,.25)';ctx.beginPath();ctx.ellipse(5,9,26,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#644c35';ctx.beginPath();ctx.ellipse(0,3,7,10,0,0,Math.PI*2);ctx.fill();let colors=[['#315f43','#3b704a','#477a4d'],['#355d3e','#47754a','#548052'],['#355b46','#3e704e','#4b7953'],['#426448','#547b4d','#628657']][a.tone];
+for(let j=0;j<3;j++){let yy=-9-j*9;ctx.fillStyle=colors[j];ctx.beginPath();ctx.ellipse((j-1)*4+sway*(j+1)*.35,yy,17-j*1.6,13-j*1.2,0,0,Math.PI*2);ctx.fill()}ctx.restore()}
+function drawSeed(s,t){let pulse=1+Math.sin(t*.004+s.phase)*.12;ctx.save();ctx.translate(s.x,s.y);ctx.fillStyle='rgba(236,205,111,.15)';ctx.beginPath();ctx.arc(0,0,13*pulse,0,7);ctx.fill();ctx.rotate(Math.sin(t*.002+s.phase)*.15);ctx.fillStyle='#d9bf76';ctx.beginPath();ctx.ellipse(0,0,4.5,6.5,0,0,7);ctx.fill();ctx.fillStyle='#f3df9e';ctx.beginPath();ctx.ellipse(-1,-2,1.3,2,0,0,7);ctx.fill();ctx.restore()}
+function drawPlayer(t){ctx.save();ctx.translate(player.x,player.y);ctx.fillStyle='rgba(8,24,20,.32)';ctx.beginPath();ctx.ellipse(1,8,13,7,0,0,7);ctx.fill();ctx.fillStyle='#d9b36f';ctx.beginPath();ctx.arc(0,-2,9,0,7);ctx.fill();ctx.fillStyle='#526e4d';ctx.beginPath();ctx.arc(0,1,10,Math.PI,0);ctx.quadraticCurveTo(0,-16,-10,1);ctx.fill();ctx.fillStyle='#f4e5be';ctx.beginPath();ctx.arc(0,-3,5.2,0,7);ctx.fill();ctx.fillStyle='#343d32';ctx.beginPath();ctx.arc(Math.cos(player.face)*3,-3+Math.sin(player.face)*2,1.2,0,7);ctx.fill();ctx.restore()}
+function draw(t){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,vw,vh);let zoom=Math.min(1.2,Math.max(.75,Math.min(vw/850,vh/600)));let cw=vw/zoom,ch=vh/zoom;cam.x=Math.max(0,Math.min(W-cw,player.x-cw/2));cam.y=Math.max(0,Math.min(H-ch,player.y-ch/2));ctx.save();ctx.scale(zoom,zoom);ctx.translate(-cam.x,-cam.y);drawGround(t);
+flowers.forEach(f=>{ctx.fillStyle=['#a6b27a','#c0ad72','#d0c187','#78976c','#d2ad8c'][f.c];ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(f.x,f.y,f.s,0,7);ctx.fill()});ctx.globalAlpha=1;
+motes.forEach(m=>{let a=.12+.4*(.5+.5*Math.sin(t*.001+m.phase));ctx.fillStyle=`rgba(235,219,152,${a})`;ctx.beginPath();ctx.arc(m.x+Math.sin(t*.0004+m.phase)*8,m.y+Math.cos(t*.0005+m.phase)*9,m.r,0,7);ctx.fill()});
+seeds.forEach(s=>{if(!s.taken)drawSeed(s,t)});
+// trunks behind the player, foliage layered according to depth
+let sorted=trees.slice().sort((a,b)=>a.y-b.y);sorted.forEach(a=>{if(a.y<player.y)drawTree(a,t)});drawPlayer(t);sorted.forEach(a=>{if(a.y>=player.y)drawTree(a,t)});
+particles=particles.filter(p=>p.life>0);particles.forEach(p=>{p.x+=p.vx*.016;p.y+=p.vy*.016;p.vy+=55*.016;p.life-=.016;ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,3,0,7);ctx.fill()});ctx.globalAlpha=1;
+// contextual plant prompt
+let near=sites.find(s=>!s.planted&&Math.hypot(player.x-s.x,player.y-s.y)<75);if(near){ctx.fillStyle='#f4e5be';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.shadowColor='#172b22';ctx.shadowBlur=8;ctx.fillText(seedCount?'E  ·  PLANT A SAPLING':'FIND A SEED POD',player.x,player.y-30);ctx.shadowBlur=0}
+ctx.restore();
+// gentle vignette
+let gr=ctx.createRadialGradient(vw/2,vh/2,Math.min(vw,vh)*.2,vw/2,vh/2,Math.max(vw,vh)*.72);gr.addColorStop(0,'rgba(9,24,20,0)');gr.addColorStop(1,'rgba(6,22,18,.28)');ctx.fillStyle=gr;ctx.fillRect(0,0,vw,vh)
+}
+function update(dt,t){if(running&&!won){let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(dx||dy){let len=Math.hypot(dx,dy);dx/=len;dy/=len;player.face=Math.atan2(dy,dx);let speed=190;let nx=Math.max(18,Math.min(W-18,player.x+dx*speed*dt)),ny=Math.max(18,Math.min(H-18,player.y+dy*speed*dt));let blocked=trees.some(a=>Math.hypot(nx-a.x,ny-a.y)<a.r*.7+player.r);if(!blocked){player.x=nx;player.y=ny}else{if(!trees.some(a=>Math.hypot(nx-a.x,player.y-a.y)<a.r*.7+player.r))player.x=nx;if(!trees.some(a=>Math.hypot(player.x,ny-a.y)<a.r*.7+player.r))player.y=ny}}
+for(let s of seeds)if(!s.taken&&Math.hypot(player.x-s.x,player.y-s.y)<25){s.taken=true;seedCount++;setCounts();audioPing(580+Math.random()*180);particles.push({x:s.x,y:s.y,vx:0,vy:-35,life:.5,color:'#f1d88f'})}
+}draw(t)}
+function frame(t){let dt=Math.min(.04,(t-last)/1000||0);last=t;update(dt,t);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
